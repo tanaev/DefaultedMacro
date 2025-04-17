@@ -1,4 +1,8 @@
-# DefaultedMacro
+# 🧩 DefaultedDecodable
+
+[![SwiftPM](https://img.shields.io/badge/SwiftPM-Compatible-brightgreen.svg?style=flat)](https://swift.org/package-manager/)
+![Swift](https://img.shields.io/badge/Swift-5.9%2B-orange)
+![Platform](https://img.shields.io/badge/platforms-iOS%2013%20%7C%20macOS%2013-lightgrey.svg)
 
 A Swift macro that automatically generates default values for missing fields in Decodable structs.
 
@@ -20,11 +24,6 @@ DefaultedMacro is a Swift macro that helps you handle missing fields in JSON dec
 - Customizable error handling for unsupported types
 - Automatic handling of optional properties
 
-## Requirements
-
-- iOS 13.0+
-- macOS 13.0+
-- Swift 5.9+
 
 ## Installation
 
