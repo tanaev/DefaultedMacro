@@ -21,9 +21,9 @@ DefaultedMacro is a Swift macro that helps you handle missing fields in JSON dec
   - Arrays: empty array (`[]`)
   - Dictionaries: empty dictionary (`[:]`)
 - Debug assertions for missing fields
-- Customizable error handling for unsupported types
+- Graceful handling of unsupported types
 - Automatic handling of optional properties
-
+- Support for nested types that also use `@DefaultedDecodable`
 
 ## Installation
 
@@ -51,12 +51,21 @@ Add the `@DefaultedDecodable` attribute to any struct that conforms to `Decodabl
 import DefaultedMacro
 
 @DefaultedDecodable
+struct Address: Decodable {
+    let street: String
+    let city: String
+    let zipCode: Int
+}
+
+@DefaultedDecodable
 struct User: Decodable {
     let name: String
     let age: Int
     let isActive: Bool
+    let address: Address  // Nested type with @DefaultedDecodable
     let scores: [Int]
     let metadata: [String: String]
+    let customType: CustomType  // Will use CustomType's own decoding logic
 }
 ```
 
@@ -69,6 +78,8 @@ The macro will automatically generate:
    - `[T]` → `[]`
    - `[K: V]` → `[:]`
    - Optional types (`T?`) remain optional and decode as `nil` if missing
+   - Nested types that use `@DefaultedDecodable` will be decoded with their own defaults
+   - Unsupported types will use their own `Decodable` implementation
 
 ### Example
 
@@ -76,13 +87,16 @@ The macro will automatically generate:
 // JSON with missing fields
 let json = """
 {
-    "name": "John"
+    "name": "John",
+    "address": {
+        "street": "123 Main St"
+    }
 }
 """
 
 // Will decode successfully with default values
 let user = try JSONDecoder().decode(User.self, from: json.data(using: .utf8)!)
-print(user) // User(name: "John", age: 0, isActive: false, scores: [], metadata: [:])
+print(user) // User(name: "John", age: 0, isActive: false, address: Address(street: "123 Main St", city: "", zipCode: 0), scores: [], metadata: [:])
 ```
 
 ### Debug Mode
@@ -106,9 +120,10 @@ The macro automatically generates an `init(from:)` implementation that:
    - `Double` → `0.0`
    - `[T]` → `[]`
    - `[K: V]` → `[:]`
-3. In debug builds, logs an assertion failure for missing fields
-4. For unsupported types, throws a fatal error
-5. Optional properties are handled by Swift's standard `Codable` implementation
+3. For nested types that use `@DefaultedDecodable`, uses `decode` instead of `decodeIfPresent` to let the nested type handle its own defaults
+4. For unsupported types, uses their own `Decodable` implementation and rethrows any decoding errors
+5. In debug builds, logs an assertion failure for missing fields
+6. Optional properties are handled by Swift's standard `Codable` implementation
 
 ## Debugging
 
@@ -116,6 +131,9 @@ In debug builds, the macro will log assertion failures when fields are missing:
 ```swift
 // If "name" is missing in the JSON:
 assertionFailure("Missing key for field: name")
+
+// If an unsupported type fails to decode:
+assertionFailure("Failed to decode field: customType of type: CustomType. Error: ...")
 ```
 
 ## License

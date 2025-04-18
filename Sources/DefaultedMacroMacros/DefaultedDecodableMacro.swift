@@ -38,7 +38,17 @@ public struct DefaultedDecodableMacro: MemberMacro {
                 return nil
             }
 
-            let decode = "try container.decodeIfPresent(\(type).self, forKey: .\(identifier))"
+            // Check if the type is a struct that might use @DefaultedDecodable
+            let isNestedStruct = type.contains(".") && !type.hasPrefix("[") && !type.hasSuffix("]")
+            
+            let decode: String
+            if isNestedStruct {
+                // For nested structs, we'll try to decode them directly
+                decode = "try container.decode(\(type).self, forKey: .\(identifier))"
+            } else {
+                decode = "try container.decodeIfPresent(\(type).self, forKey: .\(identifier))"
+            }
+
             let fallback: String
 
             if type.hasSuffix("?") {
@@ -102,13 +112,20 @@ public struct DefaultedDecodableMacro: MemberMacro {
                 }()
                 """
             default:
-                fallback = """
-                ?? {
+                if isNestedStruct {
+                    // For nested structs, we don't need a fallback as they'll be decoded directly
+                    return "self.\(identifier) = \(decode)"
+                }
+                // For unsupported types, try to decode them directly
+                return """
+                do {
+                    self.\(identifier) = try container.decode(\(type).self, forKey: .\(identifier))
+                } catch {
                     #if DEBUG
-                    assertionFailure("Missing default for field: \(identifier) of unsupported type: \(type)")
+                    assertionFailure("Failed to decode field: \(identifier) of type: \(type). Error: \\(error)")
                     #endif
-                    fatalError("Unsupported type")
-                }()
+                    throw error
+                }
                 """
             }
 
