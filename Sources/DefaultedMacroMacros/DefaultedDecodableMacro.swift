@@ -12,24 +12,38 @@ public struct DefaultedDecodableMacro: MemberMacro {
             return []
         }
 
+        // Check if CodingKeys already exists
+        let hasExistingCodingKeys = structDecl.memberBlock.members.contains { member in
+            if let enumDecl = member.decl.as(EnumDeclSyntax.self),
+               enumDecl.name.text == "CodingKeys" {
+                return true
+            }
+            return false
+        }
+
         let members: [VariableDeclSyntax] = structDecl.memberBlock.members.compactMap {
             $0.decl.as(VariableDeclSyntax.self)
         }
 
-        // Generate CodingKeys enum
-        let codingKeysCases = members.compactMap { variable -> String? in
-            guard let binding = variable.bindings.first,
-                  let identifier = binding.pattern.as(IdentifierPatternSyntax.self)?.identifier.text else {
-                return nil
+        var generatedDecls: [DeclSyntax] = []
+
+        // Only generate CodingKeys if it doesn't exist
+        if !hasExistingCodingKeys {
+            let codingKeysCases = members.compactMap { variable -> String? in
+                guard let binding = variable.bindings.first,
+                      let identifier = binding.pattern.as(IdentifierPatternSyntax.self)?.identifier.text else {
+                    return nil
+                }
+                return "case \(identifier)"
+            }.joined(separator: "\n    ")
+            
+            let codingKeysEnum = """
+            private enum CodingKeys: String, CodingKey {
+                \(codingKeysCases)
             }
-            return "case \(identifier)"
-        }.joined(separator: "\n    ")
-        
-        let codingKeysEnum = """
-        private enum CodingKeys: String, CodingKey {
-            \(codingKeysCases)
+            """
+            generatedDecls.append(DeclSyntax(stringLiteral: codingKeysEnum))
         }
-        """
 
         let assignments: [String] = members.compactMap { variable -> String? in
             guard let binding = variable.bindings.first,
@@ -139,9 +153,7 @@ public struct DefaultedDecodableMacro: MemberMacro {
         }
         """
 
-        return [
-            DeclSyntax(stringLiteral: codingKeysEnum),
-            DeclSyntax(stringLiteral: initFunction)
-        ]
+        generatedDecls.append(DeclSyntax(stringLiteral: initFunction))
+        return generatedDecls
     }
 }
