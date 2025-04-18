@@ -4,6 +4,10 @@ import SwiftSyntaxMacrosTestSupport
 @testable import DefaultedMacro
 @testable import DefaultedMacroMacros
 
+let testMacros: [String: Macro.Type] = [
+    "DefaultedDecodable": DefaultedDecodableMacro.self
+]
+
 final class DefaultedMacroTests: XCTestCase {
     func testDefaultedDecodable() throws {
         assertMacroExpansion(
@@ -80,7 +84,6 @@ final class DefaultedMacroTests: XCTestCase {
                 let street: String
                 let city: String
             }
-
             @DefaultedDecodable
             struct User: Decodable {
                 let name: String
@@ -113,7 +116,6 @@ final class DefaultedMacroTests: XCTestCase {
                     }()
                 }
             }
-
             struct User: Decodable {
                 let name: String
                 let address: Address
@@ -211,14 +213,7 @@ final class DefaultedMacroTests: XCTestCase {
                         #endif
                         return ""
                     }()
-                    do {
-                        self.customType = try container.decode(CustomType.self, forKey: .customType)
-                    } catch {
-                        #if DEBUG
-                        assertionFailure("Failed to decode field: customType of type: CustomType. Error: \\(error)")
-                        #endif
-                        throw error
-                    }
+                    self.customType = try container.decode(CustomType.self, forKey: .customType)
                 }
             }
             """,
