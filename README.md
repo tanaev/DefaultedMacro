@@ -3,6 +3,7 @@
 [![SwiftPM](https://img.shields.io/badge/SwiftPM-Compatible-brightgreen.svg?style=flat)](https://swift.org/package-manager/)
 ![Swift](https://img.shields.io/badge/Swift-5.9%2B-orange)
 ![Platform](https://img.shields.io/badge/platforms-iOS%2013%20%7C%20macOS%2013-lightgrey.svg)
+[![GitHub release](https://img.shields.io/github/v/release/tanaev/DefaultedMacro)](https://github.com/tanaev/DefaultedMacro/releases)
 
 A Swift macro that automatically generates default values for missing fields in Decodable structs.
 
