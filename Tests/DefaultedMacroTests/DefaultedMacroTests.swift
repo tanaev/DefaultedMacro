@@ -123,7 +123,7 @@ final class DefaultedMacroTests: XCTestCase {
                     case address
                 }
             
-                public init(from decoder: Decoder) try {
+                public init(from decoder: Decoder) throws {
                     let container = try decoder.container(keyedBy: CodingKeys.self)
                     self.name = try container.decodeIfPresent(String.self, forKey: .name) ?? {
                         #if DEBUG
